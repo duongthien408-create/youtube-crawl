@@ -1,0 +1,49 @@
+name: Fetch YouTube Videos
+
+on:
+  # Run daily at 8:00 AM Vietnam time (UTC+7 = 01:00 UTC)
+  schedule:
+    - cron: '0 1 * * *'
+
+  # Allow manual trigger with options
+  workflow_dispatch:
+    inputs:
+      language:
+        description: 'Language to fetch'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - vi
+          - en
+      limit:
+        description: 'Videos per channel'
+        required: false
+        default: '5'
+        type: string
+
+jobs:
+  fetch-youtube:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch YouTube videos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python scripts/fetch_youtube.py \
+            --lang ${{ github.event.inputs.language || 'all' }} \
+            --limit ${{ github.event.inputs.limit || '5' }}
