@@ -1,0 +1,56 @@
+name: Fetch WW2 Tales (Batch)
+
+on:
+  # Run every 6 hours to avoid rate limits
+  schedule:
+    - cron: '0 */6 * * *'
+
+  # Allow manual trigger with batch options
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Videos per batch'
+        required: false
+        default: '20'
+        type: string
+      delay:
+        description: 'Delay between videos (seconds)'
+        required: false
+        default: '10'
+        type: string
+
+env:
+  CHANNEL_ID: 'UCVDS-cjZZIWPjL5fdXSMywQ'
+  LANGUAGE: 'en'
+
+jobs:
+  fetch-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120  # 2 hour timeout
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch WW2 Tales videos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          echo "Fetching videos from WW2 Tales channel..."
+          echo "Limit: ${{ github.event.inputs.limit || '20' }} videos"
+          echo "Delay: ${{ github.event.inputs.delay || '10' }}s between videos"
+
+          python scripts/fetch_youtube.py \
+            --channel ${{ env.CHANNEL_ID }} \
+            --lang ${{ env.LANGUAGE }} \
+            --limit ${{ github.event.inputs.limit || '20' }} \
+            --delay ${{ github.event.inputs.delay || '10' }}
